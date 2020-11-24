@@ -1,0 +1,14 @@
+Sprint 2 - Group 6
+1.      World Bank Open Data. This data set could be used to track a country’s GDP over time, wherein you could then draw correlations with other events and use the data to draw conclusions.
+The goal of the first project idea would be to provide a tool that gives easy access to GDPs across the world. The major features of the project would be intuitive searching tools that allow quick and easy access to specified data, and understandable charts that format the data in an accessible way. Customers would be anyone who would benefit from the data, most likely those involved in the economics field like stock traders and financial analysts. This project would be useful to society by making a lot of people’s jobs easier & more convenient. 
+Data Link: https://data.worldbank.org/
+
+
+2. Feature List:
+
+Interactive Map - (research how) Cam/AH
+Dropdown menu of Country/Graph Type Cam/Shy
+Graphical rendering of data Dane/Cam
+Comparison of Graphs AH/Shy
+Export / image save of graph data Dane/Shy
+Ability to add a third variable in the graph Dane
