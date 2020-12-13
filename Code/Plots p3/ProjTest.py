@@ -38,6 +38,9 @@ else:
 
 dynamicCountryTitle = 'GDP of ' + str(place) + ' From 1960 to 2019'
 
+
+layout = go.Layout(xaxis_title="Year Range",yaxis_title="GDP")
+
 #create figure
 fig = go.Figure()
 
@@ -49,7 +52,8 @@ fig.add_trace(
 
 # Set title
 fig.update_layout(
-    title_text="This line chart represent the GDP of the selected country between 1960 to 2020"
+    title_text= dynamicCountryTitle,
+    xaxis_title="Year Range",yaxis_title="GDP"
     )
 
 # Add range slider
@@ -113,9 +117,19 @@ app.layout = html.Div(children=[
 
     html.Hr(style={'color': '#7FDBFF'}),
     html.H3('Line chart', style={'color': '#df1e56'}),
-    html.Div('This line chart represent the GDP of the selected country between 1960 to 2020.'),
-    dcc.Graph(id="graph", figure=fig),
+    html.Div('This line chart represent the GDP of the selected country between 1960 to 2019.'),
 
+    dcc.Dropdown(
+        id='demo-dropdown',
+        options=[
+            {'label': 'United States', 'value': 'United States'},
+            {'label': 'Aruba', 'value': 'Aruba'},
+            {'label': 'Afghanistan', 'value': 'Afghanistan'}
+        ],
+        placeholder="Select City"
+    ),
+
+    dcc.Graph(id="graph", figure=fig),
     html.Div(id='output-container-range-slider')
     #           ),
     # html.Hr(style={'color': '#7FDBFF'}),
@@ -134,18 +148,65 @@ app.layout = html.Div(children=[
 ])
 
 
-@app.callback(Output('graph1', 'figure'),
-              [Input('select-continent', 'value')])
-def update_figure(selected_continent):
-    filtered_df = df1[df1['Continent'] == selected_continent]
+@app.callback(
+    dash.dependencies.Output('graph', 'figure'),
+    [dash.dependencies.Input('demo-dropdown', 'value')])
+def update_figure(value):
+    dynamicCountryTitle = 'GDP of ' + str(value) + ' From 1960 to 2019'
 
-    filtered_df = filtered_df.apply(lambda x: x.str.strip() if x.dtype == "object" else x)
-    new_df = filtered_df.groupby(['Country'])['Confirmed'].sum().reset_index()
-    new_df = new_df.sort_values(by=['Confirmed'], ascending=[False]).head(20)
-    data_linechart = [go.Bar(x=new_df['Country'], y=new_df['Confirmed'])]
-    return {'data': data_linechart, 'layout': go.Layout(title='Corona Virus Confirmed Cases in '+selected_continent,
-                                                                   xaxis={'title': 'Country'},
-                                                                   yaxis={'title': 'Number of confirmed cases'})}
+    layout = go.Layout(title=str(value),
+                       xaxis_title="Year Range",
+                       yaxis_title="GDP")
+    # create figure
+    fig = go.Figure(layout=layout)
+
+    # create trace
+    fig.add_trace(
+        go.Scatter(x=list(df3['Year']), y=list(df3[str(value)]))
+    )
+
+    # Set title
+    fig.update_layout(
+        title_text= dynamicCountryTitle
+    )
+
+    # Add range slider
+    fig.update_layout(
+        xaxis=dict(
+            rangeselector=dict(
+                buttons=list([
+                    dict(count=1,
+                         label="Last Month",
+                         step="month",
+                         stepmode="backward"),
+                    dict(count=6,
+                         label="Last 6 Months",
+                         step="month",
+                         stepmode="backward"),
+                    dict(count=1,
+                         label="YTD",
+                         step="year",
+                         stepmode="todate"),
+                    dict(count=1,
+                         label="Last Year",
+                         step="year",
+                         stepmode="backward"),
+                    dict(step="all")
+                ])
+            ),
+            rangeslider=dict(
+                visible=True
+            ),
+            type="date"
+        )
+    )
+
+    fig.write_html(buffer)
+
+    html_bytes = buffer.getvalue().encode()
+    encoded = b64encode(html_bytes).decode()
+    return fig
+
 
 @app.callback(
     dash.dependencies.Output('output-container-range-slider', 'children'),
