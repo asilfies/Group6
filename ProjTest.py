@@ -7,6 +7,9 @@ from dash.dependencies import Input, Output
 import pandas as pd
 import plotly.graph_objs as go
 import numpy as py
+
+external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+
 # Load CSV file from Datasets folder
 df1 = pd.read_csv('DateRange.csv')
 df2 = pd.read_csv('myData.csv')
@@ -38,8 +41,11 @@ else:
 
 dynamicCountryTitle = 'GDP of ' + str(place) + ' From 1960 to 2020'
 
+layout = go.Layout(title="Bruh Moment",
+                   xaxis_title="Date",
+                   yaxis_title="Number of cases")
 #create figure
-fig = go.Figure()
+fig = go.Figure(layout=layout)
 
 #create trace
 fig.add_trace(
@@ -125,6 +131,15 @@ app.layout = html.Div(children=[
     html.Hr(style={'color': '#7FDBFF'}),
     html.H3('Line chart', style={'color': '#df1e56'}),
     html.Div('This line chart represent the GDP of the selected country between 1960 to 2020.'),
+    dcc.Dropdown(
+        id='demo-dropdown',
+        options=[
+            {'label': 'United States', 'value': 'United States'},
+            {'label': 'Aruba', 'value': 'Aruba'},
+            {'label': 'Afghanistan', 'value': 'Afghanistan'}
+        ],
+        placeholder = "Select City"
+    ),
     dcc.Graph(id="graph", figure=fig),
 
     html.Div(id='output-container-range-slider')
@@ -145,23 +160,68 @@ app.layout = html.Div(children=[
 ])
 
 
-@app.callback(Output('graph1', 'figure'),
-              [Input('select-continent', 'value')])
-def update_figure(selected_continent):
-    filtered_df = df1[df1['Continent'] == selected_continent]
+@app.callback(
+    dash.dependencies.Output('graph', 'figure'),
+    [dash.dependencies.Input('demo-dropdown', 'value')])
+def update_figure(value):
+    layout = go.Layout(title=str(value),
+                       xaxis_title="Date",
+                       yaxis_title="Number of cases")
+    # create figure
+    fig = go.Figure(layout=layout)
 
-    filtered_df = filtered_df.apply(lambda x: x.str.strip() if x.dtype == "object" else x)
-    new_df = filtered_df.groupby(['Country'])['Confirmed'].sum().reset_index()
-    new_df = new_df.sort_values(by=['Confirmed'], ascending=[False]).head(20)
-    data_linechart = [go.Bar(x=new_df['Country'], y=new_df['Confirmed'])]
-    return {'data': data_linechart, 'layout': go.Layout(title='Corona Virus Confirmed Cases in '+selected_continent,
-                                                                   xaxis={'title': 'Country'},
-                                                                   yaxis={'title': 'Number of confirmed cases'})}
+    # create trace
+    fig.add_trace(
+        go.Scatter(x=list(df3['Year']), y=list(df3[str(value)]))
+    )
+
+    # Set title
+    fig.update_layout(
+        title_text="Time series with range slider and selectors"
+    )
+
+    # Add range slider
+    fig.update_layout(
+        xaxis=dict(
+            rangeselector=dict(
+                buttons=list([
+                    dict(count=1,
+                         label="1m",
+                         step="month",
+                         stepmode="backward"),
+                    dict(count=6,
+                         label="6m",
+                         step="month",
+                         stepmode="backward"),
+                    dict(count=1,
+                         label="YTD",
+                         step="year",
+                         stepmode="todate"),
+                    dict(count=1,
+                         label="1y",
+                         step="year",
+                         stepmode="backward"),
+                    dict(step="all")
+                ])
+            ),
+            rangeslider=dict(
+                visible=True
+            ),
+            type="date"
+        )
+    )
+
+    fig.write_html(buffer)
+
+    html_bytes = buffer.getvalue().encode()
+    encoded = b64encode(html_bytes).decode()
+    return fig
 
 @app.callback(
     dash.dependencies.Output('output-container-range-slider', 'children'),
     [dash.dependencies.Input('FirstSlider', 'value')])
 def update_output(value):
+    fig
     return 'You have selected "{}"'.format(value)
 
 
