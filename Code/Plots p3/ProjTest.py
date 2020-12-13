@@ -1,3 +1,5 @@
+import io
+from base64 import b64encode
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
@@ -6,11 +8,11 @@ import pandas as pd
 import plotly.graph_objs as go
 import numpy as py
 # Load CSV file from Datasets folder
-df1 = pd.read_csv('../Datasets/DateRange.csv')
-df2 = pd.read_csv('../Datasets/myData.csv')
-df3 = pd.read_csv('../Datasets/GDPGlobal.csv')
+df1 = pd.read_csv('DateRange.csv')
+df2 = pd.read_csv('myData.csv')
+df3 = pd.read_csv('GDPGlobal.csv')
 
-
+buffer = io.StringIO()
 app = dash.Dash()
 
 # Line Chart
@@ -20,9 +22,9 @@ app = dash.Dash()
 py.Date2 = [0] * 60
 dummy = 0
 for i in range(1960, 2020):
-    #py.Date2 [dummy] = i
-    #dummy = dummy + 1
+    py.Date2 [dummy] = i
     #print( py.Date2[dummy] )
+    dummy = dummy + 1
     print()#DO NOT COMMENT OUT THIS LINE
 
 
@@ -34,21 +36,57 @@ elif fuckThis == 1:
 else:
     place = 'United States'
 
-dynamicCountryTitle = 'GDP of ' + str(place) + ' From 1960 to 2020'
+dynamicCountryTitle = 'GDP of ' + str(place) + ' From 1960 to 2019'
 
-line_df = df3
-data_linechart = [go.Scatter(x=line_df['Year'], y=line_df[str(place)], mode='lines', name= str(place))]
+#create figure
+fig = go.Figure()
+
+#create trace
+fig.add_trace(
+    go.Scatter(x=list(py.Date2), y=list(df3[str(place)]))
+    #go.Scatter(x=list(df3['Year']), y=list(df3[str(place)]))
+)
+
+# Set title
+fig.update_layout(
+    title_text="This line chart represent the GDP of the selected country between 1960 to 2020"
+    )
+
+# Add range slider
+fig.update_layout(
+    xaxis=dict(
+        rangeselector=dict(
+            buttons=list([
+                dict(count=1,
+                     label="Last Month",
+                     step="month",
+                     stepmode="backward"),
+                dict(count=6,
+                     label="Last 6 Months",
+                     step="month",
+                     stepmode="backward"),
+                dict(count=1,
+                     label="YTD",
+                     step="year",
+                     stepmode="todate"),
+                dict(count=1,
+                     label="Last Year",
+                     step="year",
+                     stepmode="backward"),
+                dict(step="all")
+            ])
+        ),
+        rangeslider=dict(
+            visible=True
+        ),
+        type="date"
+    )
+)
+fig.write_html(buffer)
+html_bytes = buffer.getvalue().encode()
+encoded = b64encode(html_bytes).decode()
+
 # #data_linechart = [go.Scatter(x=line_df['Year'], y=line_df[str(place)], mode='lines', name= str(place))]
-
-
-###
-# line_df = df2
-# line_df2 = df1
-# #line_df['Country Name'] = pd.to_datetime((line_df['Country Name'])
-# data_linechart = [go.Scatter(x=line_df2['Year'], y=line_df['1960'], mode='lines', name='Death')]
-# #data_linechart = [go.Scatter(x=line_df['Date'], y=line_df['Confirmed'], mode='lines', name='Death')]
-###
-
 
 # Multi Line Chart
 
@@ -76,25 +114,8 @@ app.layout = html.Div(children=[
     html.Hr(style={'color': '#7FDBFF'}),
     html.H3('Line chart', style={'color': '#df1e56'}),
     html.Div('This line chart represent the GDP of the selected country between 1960 to 2020.'),
-    dcc.Graph(id='graph4',
-              figure={
-                  'data': data_linechart,
-                  'layout': go.Layout(title= dynamicCountryTitle,
-                  #'layout': go.Layout(title='GDP of XXX From 1960 to 2020',
-                                      xaxis={'title': 'Year'}, yaxis={'title': 'Estimated GDP'})
-              }
-              ),
-    html.H3('Define Year Range', style={'color': '#df1e56'}),
-    dcc.RangeSlider(
-        id = 'FirstSlider',
-        #marks={i: 'Label {}'.format(i) for i in range(1960, 2019)},
-        marks={i: '{}'.format(i) for i in range(1960, 2020)},
-        #count=5,
-        min=1960,
-        max=2019,
-        step=5,
-        value=[1960, 2019]
-),
+    dcc.Graph(id="graph", figure=fig),
+
     html.Div(id='output-container-range-slider')
     #           ),
     # html.Hr(style={'color': '#7FDBFF'}),
@@ -131,7 +152,6 @@ def update_figure(selected_continent):
     [dash.dependencies.Input('FirstSlider', 'value')])
 def update_output(value):
     return 'You have selected "{}"'.format(value)
-
 
 if __name__ == '__main__':
     app.run_server()
