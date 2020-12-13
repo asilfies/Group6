@@ -162,7 +162,8 @@ def update_figure(value):
 
     # create trace
     fig.add_trace(
-        go.Scatter(x=list(df3['Year']), y=list(df3[str(value)]))
+        go.Scatter(x=list(py.Date2), y=list(df3[str(value)]))
+        #go.Scatter(x=list(df3['Year']), y=list(df3[str(value)]))
     )
 
     # Set title
