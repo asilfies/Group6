@@ -126,7 +126,7 @@ app.layout = html.Div(children=[
             {'label': 'Aruba', 'value': 'Aruba'},
             {'label': 'Afghanistan', 'value': 'Afghanistan'}
         ],
-        placeholder="Select City"
+        placeholder="Select Country"
     ),
 
     dcc.Graph(id="graph", figure=fig),
