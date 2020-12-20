@@ -7,16 +7,17 @@ from dash.dependencies import Input, Output
 import pandas as pd
 import plotly.graph_objs as go
 import numpy as py
-
-external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
-
 # Load CSV file from Datasets folder
 df1 = pd.read_csv('DateRange.csv')
 df2 = pd.read_csv('myData.csv')
 df3 = pd.read_csv('GDPGlobal.csv')
+df4 = pd.read_csv('PopGlobal.csv')
+df5 = pd.read_csv('DeathRateGlobal.csv')
+df6 = pd.read_csv('LifeExpectancyGlobal.csv')
 
 buffer = io.StringIO()
 app = dash.Dash()
+available_countries = df2['Country Name'].unique()
 
 # Line Chart
 #1960 2019
@@ -25,9 +26,9 @@ app = dash.Dash()
 py.Date2 = [0] * 60
 dummy = 0
 for i in range(1960, 2020):
-    #py.Date2 [dummy] = i
-    #dummy = dummy + 1
+    py.Date2 [dummy] = i
     #print( py.Date2[dummy] )
+    dummy = dummy + 1
     print()#DO NOT COMMENT OUT THIS LINE
 
 
@@ -39,23 +40,25 @@ elif fuckThis == 1:
 else:
     place = 'United States'
 
-dynamicCountryTitle = 'GDP of ' + str(place) + ' From 1960 to 2020'
+dynamicCountryTitle = 'GDP of ' + str(place)
 
-layout = go.Layout(title="Bruh Moment",
-                   xaxis_title="Date",
-                   yaxis_title="Number of cases")
+
+layout = go.Layout(xaxis_title="Year Range",yaxis_title="GDP")
+
 #create figure
-fig = go.Figure(layout=layout)
+fig = go.Figure()
 
 #create trace
 fig.add_trace(
-    go.Scatter(x=list(df3['Year']), y=list(df3[str(place)]))
+    go.Scatter(x=list(py.Date2), y=list(df3[str(place)]))
 )
+
 
 # Set title
 fig.update_layout(
-    title_text="Time series with range slider and selectors"
-)
+    title_text= dynamicCountryTitle,
+    xaxis_title="Year Range", yaxis_title="GDP"
+    )
 
 # Add range slider
 fig.update_layout(
@@ -63,11 +66,11 @@ fig.update_layout(
         rangeselector=dict(
             buttons=list([
                 dict(count=1,
-                     label="1m",
+                     label="Last Month",
                      step="month",
                      stepmode="backward"),
                 dict(count=6,
-                     label="6m",
+                     label="Last 6 Months",
                      step="month",
                      stepmode="backward"),
                 dict(count=1,
@@ -75,7 +78,7 @@ fig.update_layout(
                      step="year",
                      stepmode="todate"),
                 dict(count=1,
-                     label="1y",
+                     label="Last Year",
                      step="year",
                      stepmode="backward"),
                 dict(step="all")
@@ -87,23 +90,11 @@ fig.update_layout(
         type="date"
     )
 )
-
 fig.write_html(buffer)
-
 html_bytes = buffer.getvalue().encode()
 encoded = b64encode(html_bytes).decode()
 
 # #data_linechart = [go.Scatter(x=line_df['Year'], y=line_df[str(place)], mode='lines', name= str(place))]
-
-
-###
-# line_df = df2
-# line_df2 = df1
-# #line_df['Country Name'] = pd.to_datetime((line_df['Country Name'])
-# data_linechart = [go.Scatter(x=line_df2['Year'], y=line_df['1960'], mode='lines', name='Death')]
-# #data_linechart = [go.Scatter(x=line_df['Date'], y=line_df['Confirmed'], mode='lines', name='Death')]
-###
-
 
 # Multi Line Chart
 
@@ -130,18 +121,35 @@ app.layout = html.Div(children=[
 
     html.Hr(style={'color': '#7FDBFF'}),
     html.H3('Line chart', style={'color': '#df1e56'}),
-    html.Div('This line chart represent the GDP of the selected country between 1960 to 2020.'),
-    dcc.Dropdown(
-        id='demo-dropdown',
-        options=[
-            {'label': 'United States', 'value': 'United States'},
-            {'label': 'Aruba', 'value': 'Aruba'},
-            {'label': 'Afghanistan', 'value': 'Afghanistan'}
-        ],
-        placeholder = "Select City"
-    ),
-    dcc.Graph(id="graph", figure=fig),
+    html.Div('This line chart represent the GDP of the selected country between 1960 to 2019.'),
 
+    dcc.Dropdown(
+        id='country-dropdown1',
+        options=[{'label': i, 'value': i} for i in available_countries],
+        placeholder="Select Country",
+        style = dict(width='40%')
+    ),
+    dcc.Dropdown(
+        id='country-dropdown2',
+        options=[{'label': i, 'value': i} for i in available_countries],
+        placeholder="Select Country",
+        style = dict(width='40%')
+    ),
+
+dcc.Dropdown(
+        id='yaxis-dropdown',
+        options=[
+            {'label': 'GDP', 'value': 'df3'},
+            {'label': 'Population', 'value': 'df4'},
+            {'label': 'Death Rate', 'value': 'df5'},
+            {'label': 'Life Expectancy', 'value': 'df6'},
+
+        ],
+        placeholder="Select Y Variable",
+        style = dict(width='40%')
+    ),
+
+    dcc.Graph(id="graph", figure=fig),
     html.Div(id='output-container-range-slider')
     #           ),
     # html.Hr(style={'color': '#7FDBFF'}),
@@ -161,23 +169,76 @@ app.layout = html.Div(children=[
 
 
 @app.callback(
-    dash.dependencies.Output('graph', 'figure'),
-    [dash.dependencies.Input('demo-dropdown', 'value')])
-def update_figure(value):
-    layout = go.Layout(title=str(value),
-                       xaxis_title="Date",
-                       yaxis_title="Number of cases")
+    Output('graph', 'figure'),
+    Input('country-dropdown1', 'value'),
+    Input('country-dropdown2', 'value'),
+    Input('yaxis-dropdown', 'value'),
+)
+def update_graph(countryonevalue, countrytwovalue, yaxisvalue):
+
+    database = "GDP"
+    if(str(yaxisvalue) == "df4"):
+        database = "Population"
+    elif(str(yaxisvalue) == "df5"):
+        database = "Death Rate"
+    elif(str(yaxisvalue) == "df6"):
+        database = "Life Expectancy"
+
+    dynamicCountryTitle = database + ' comparison of ' + str(countryonevalue) + ' and ' + str(countrytwovalue)
+
+    layout = go.Layout(title=dynamicCountryTitle,
+                       yaxis_title = database)
     # create figure
     fig = go.Figure(layout=layout)
 
-    # create trace
-    fig.add_trace(
-        go.Scatter(x=list(df3['Year']), y=list(df3[str(value)]))
-    )
+    # create trace based on variable
+    database = "GDP"
+    if (str(yaxisvalue) == "df4"):
+        database = "Population"
+        fig.add_trace(
+            go.Scatter(x=list(py.Date2), y=list(df4[str(countryonevalue)]), name=str(countryonevalue))
+            # go.Scatter(x=list(df3['Year']), y=list(df3[str(value)]))
+        )
+        fig.add_trace(
+            go.Scatter(x=list(py.Date2), y=list(df4[str(countrytwovalue)]), name=str(countrytwovalue))
+            # go.Scatter(x=list(df3['Year']), y=list(df3[str(value)]))
+        )
+    elif (str(yaxisvalue) == "df5"):
+        database = "Death Rate"
+        fig.add_trace(
+            go.Scatter(x=list(py.Date2), y=list(df5[str(countryonevalue)]), name=str(countryonevalue))
+            # go.Scatter(x=list(df3['Year']), y=list(df3[str(value)]))
+        )
+        fig.add_trace(
+            go.Scatter(x=list(py.Date2), y=list(df5[str(countrytwovalue)]), name=str(countrytwovalue))
+            # go.Scatter(x=list(df3['Year']), y=list(df3[str(value)]))
+        )
+    elif (str(yaxisvalue) == "df6"):
+        database = "Life Expectancy"
+        fig.add_trace(
+            go.Scatter(x=list(py.Date2), y=list(df6[str(countryonevalue)]), name=str(countryonevalue))
+            # go.Scatter(x=list(df3['Year']), y=list(df3[str(value)]))
+        )
+        fig.add_trace(
+            go.Scatter(x=list(py.Date2), y=list(df6[str(countrytwovalue)]), name=str(countrytwovalue))
+            # go.Scatter(x=list(df3['Year']), y=list(df3[str(value)]))
+        )
+    else:
+        fig.add_trace(
+            go.Scatter(x=list(py.Date2), y=list(df3[str(countryonevalue)]), name=str(countryonevalue))
+            # go.Scatter(x=list(df3['Year']), y=list(df3[str(value)]))
+        )
+        fig.add_trace(
+            go.Scatter(x=list(py.Date2), y=list(df3[str(countrytwovalue)]), name=str(countrytwovalue))
+            # go.Scatter(x=list(df3['Year']), y=list(df3[str(value)]))
+        )
+
 
     # Set title
     fig.update_layout(
-        title_text="Time series with range slider and selectors"
+        title=dynamicCountryTitle,
+        yaxis_title=database
+
     )
 
     # Add range slider
@@ -186,11 +247,11 @@ def update_figure(value):
             rangeselector=dict(
                 buttons=list([
                     dict(count=1,
-                         label="1m",
+                         label="Last Month",
                          step="month",
                          stepmode="backward"),
                     dict(count=6,
-                         label="6m",
+                         label="Last 6 Months",
                          step="month",
                          stepmode="backward"),
                     dict(count=1,
@@ -198,7 +259,7 @@ def update_figure(value):
                          step="year",
                          stepmode="todate"),
                     dict(count=1,
-                         label="1y",
+                         label="Last Year",
                          step="year",
                          stepmode="backward"),
                     dict(step="all")
@@ -217,13 +278,13 @@ def update_figure(value):
     encoded = b64encode(html_bytes).decode()
     return fig
 
+
+
 @app.callback(
     dash.dependencies.Output('output-container-range-slider', 'children'),
     [dash.dependencies.Input('FirstSlider', 'value')])
 def update_output(value):
-    fig
     return 'You have selected "{}"'.format(value)
-
 
 if __name__ == '__main__':
     app.run_server()
