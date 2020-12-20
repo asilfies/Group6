@@ -126,7 +126,22 @@ app.layout = html.Div(children=[
             {'label': 'Aruba', 'value': 'Aruba'},
             {'label': 'Afghanistan', 'value': 'Afghanistan'}
         ],
-        placeholder="Select Country"
+        placeholder="Select Country",
+        style=dict(
+            width='40%',
+             verticalAlign="middle"
+        )
+    ),
+
+    ##TEST
+    dcc.Dropdown(
+        id='demo-dropdown2',
+        options=[
+            {'label': 'United States', 'value': 'United States'},
+            {'label': 'Aruba', 'value': 'Aruba'},
+        ],
+        placeholder="Select Country",
+    style = dict(width='40%',verticalAlign="top")
     ),
 
     dcc.Graph(id="graph", figure=fig),
